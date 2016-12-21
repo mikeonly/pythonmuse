@@ -43,7 +43,7 @@ func main() {
 
 	// Loop forever.
 	for {
-		// This loops resets the pointer i value to 0 each time it reaches the end of values array.
+		// This loops resets the pointer i to 0 each time it reaches the end of the values array.
 		for i := 0; i < 1000; i++ {
 			elapsed := float64(time.Since(start)) / 1e9
 			fmt.Printf("\rStreaming for %2.1fs", elapsed)
