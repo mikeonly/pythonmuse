@@ -83,22 +83,10 @@ class Grapher(Process):
     received data into the Bokeh server."""
     def __init__(self, name, pipe):
         super(Grapher, self).__init__(name=name, daemon=True)
-        # Predefine attributes to save received data to.
-        self.timestamp0 = time.time()
-        self.timestamp = []
-        self.RAUX = []
-        self.LAUX = []
         # multiprocessing config.
         self.input_p, output_p = pipe  # In and out are relative to the obj.
         # Bokeh config.
         self.doc = curdoc()
-        self.source = ColumnDataSource(dict(LAUX=[], RAUX=[],
-                                            time=[]))
-        self.fig = figure()
-        self.fig.line(source=self.source, x='time', y='LAUX',
-                      line_width=2, alpha=0.85, color='red')  
-        self.fig.line(source=self.source, x='time', y='RAUX',
-                      line_width=2, alpha=0.85, color='red')
         # self.doc.add_root(self.fig)
         self.session = push_session(self.doc)
 
@@ -108,12 +96,11 @@ class Grapher(Process):
         with each data channel: timestamp, LAUX and RAUX, but can be more.'''
         # Receive arguments from pipe for the first time. It iniaites lists for
         # further appending.
-        source = ColumnDataSource(data=dict(x=[0], y=[0]))
-
-        p = figure()
+        source = ColumnDataSource(data=dict(x=[], y=[]))
+        fig = figure()
         # self.timestamp0, LAUX, TP9, AF7, AF8, TP10, RAUX = self.input_p.recv()
-        r2 = p.line(source=source, x='x', y='y',
-                    line_width=2, alpha=0.85, color='red')
+        fig.line(source=source, x='x', y='y',
+                 line_width=2, alpha=0.85, color='red')
         # self.timestamp += [self.timestamp0]  # Only for the first time.
         # # open a session to keep our local document in sync with server
         session = push_session(curdoc())
@@ -122,14 +109,12 @@ class Grapher(Process):
         source.stream(dict(x=[0], y=[LAUX]))
 
         def update():
-            # On update, recieve arguments from OSC channel.
+            # On update, recieve arguments from OSC channel
             timestamp, LAUX, TP9, AF7, AF8, TP10, RAUX = self.input_p.recv()
             # Update source with the recieved variables.
             time = timestamp-timestamp0
-            source.stream(dict(x=[time], y=[LAUX]))
+            source.stream(dict(x=[time], y=[LAUX]), rollover=1000)
 
         curdoc().add_periodic_callback(update, 2)
-
-        session.show(p) # open the document in a browser
-
+        session.show(fig) # open the document in a browser
         session.loop_until_closed() # run forever
