@@ -74,7 +74,7 @@ class Saver(Process):
                     self.buffer = []
 
     def save(self, f, data):
-            # Save args into a csv file.
+        # Save args into a csv file.
         np.savetxt(f, data, delimiter=',', newline='\n')
 
 
